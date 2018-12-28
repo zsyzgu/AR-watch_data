@@ -3,15 +3,16 @@ import sys
 from matplotlib import pyplot as plt
 import math
 import numpy as np
+import pandas as pd
+
+from point import Point
 
 class DataFrame:
-	type = ''
 	timestamp = 0.0
-	x = 0.0
-	y = 0.0
-	z = 0.0
+	acc = Point()
+	gyr = Point()
 
-def get_file_list():        
+def get_file_list():
 	root_dir = '.'
 	file_name = os.listdir(root_dir)
 
@@ -23,58 +24,74 @@ def get_file_list():
 
 	return file_list
 
+def parseTime(str):
+	tags = str.split('.')
+	ms = int(tags[1])
+	tags = tags[0].split(':')
+	ms = ms + ((int(tags[0]) * 60 + int(tags[1])) * 60 + int(tags[2])) * 1000
+	return ms
+
 def read_data(file):
-	acc_list = []
-	gyr_list = []
+	frames = []
 
 	lines = open(file, 'r')
 	for line in lines:
-		tags = line.strip().split(', ')
-		if (len(tags) == 5):
+		tags = line.strip().split()
+		if (len(tags) == 9):
 			frame = DataFrame()
-			frame.type = tags[0]
-			frame.timestamp = float(tags[1])
-			frame.x = float(tags[2])
-			frame.y = float(tags[3])
-			frame.z = float(tags[4])
-			if frame.type == 'Acc':
-				acc_list.append(frame)
-			else:
-				gyr_list.append(frame)
+			frame.timestamp = parseTime(tags[0])
+			frame.acc = Point(tags[3], tags[4], tags[5])
+			frame.gyr = Point(tags[6], tags[7], tags[8])
+			frames.append(frame)
 	
-	return acc_list, gyr_list
+	return frames
 
-def analyze_data(file):
-	acc_list, gyr_list = read_data(file)
+def fix_timestamp(timestamp):
+	n = len(timestamp)
+	j = 0
+	for i in range(1, n):
+		if (timestamp[i] != timestamp[i - 1]):
+			timestamp[j : i] = np.linspace(timestamp[j], timestamp[i], i - j, endpoint = False)
+			j = i
+	print timestamp
+	return timestamp
+
+def fix_acc(acc):
+	# acc = pd.Series(acc)
+	# acc_mean = acc.rolling(window = 20).mean()
+	# TODO
+	pass
+
+def draw_points(timestamp, points):
+	n = len(timestamp)
+	assert n == len(points)
+	x = [points[i].x for i in range(n)]
+	y = [points[i].y for i in range(n)]
+	z = [points[i].z for i in range(n)]
+	plt.plot(timestamp, x, timestamp, y, timestamp, z)
+
+def draw_frames(frames):
+	n = len(frames)
+	timestamp = [frames[i].timestamp for i in range(n)]
+	timestamp = np.array(timestamp) - timestamp[0]
+	timestamp = fix_timestamp(timestamp)
+	acc = [frames[i].acc for i in range(n)]
+	gyr = [frames[i].gyr for i in range(n)]
 	
 	plt.figure(file)
 
-	acc_t = [acc_list[i].timestamp for i in range(len(acc_list))]
-	acc_x = [acc_list[i].x for i in range(len(acc_list))]
-	acc_y = [acc_list[i].y for i in range(len(acc_list))]
-	acc_z = [acc_list[i].z for i in range(len(acc_list))]
-	acc_t = np.array(acc_t) - acc_t[0]
-	acc_x = acc_x - np.mean(acc_x)
-	acc_y = acc_y - np.mean(acc_y)
-	acc_z = acc_z - np.mean(acc_z)
 	plt.subplot(2, 1, 1)
-	plt.title('Acc')
-	plt.plot(acc_t, acc_x, acc_t, acc_y, acc_t, acc_z)
-	
-	gyr_t = [gyr_list[i].timestamp for i in range(len(gyr_list))]
-	gyr_x = [gyr_list[i].x for i in range(len(gyr_list))]
-	gyr_y = [gyr_list[i].y for i in range(len(gyr_list))]
-	gyr_z = [gyr_list[i].z for i in range(len(gyr_list))]
-	gyr_t = np.array(gyr_t) - gyr_t[0]
-	gyr_x = gyr_x - np.mean(gyr_x)
-	gyr_y = gyr_y - np.mean(gyr_y)
-	gyr_z = gyr_z - np.mean(gyr_z)
+	plt.title('acc')
+	draw_points(timestamp, acc)
+
 	plt.subplot(2, 1, 2)
-	plt.title('Gyr')
-	plt.plot(gyr_t, gyr_x, gyr_t, gyr_y, gyr_t, gyr_z)
+	plt.title('gyr')
+	draw_points(timestamp, gyr)
 
 	plt.show()
 
-file_list = get_file_list()
-for file in file_list:
-	analyze_data(file)
+if __name__ == '__main__':
+	file_list = get_file_list()
+	for file in file_list:
+		frames = read_data(file)
+		draw_frames(frames)
