@@ -53,3 +53,4 @@ if __name__ == '__main__':
 		frames.read_data(file)
 		frames.preprocess()
 		draw_frames(frames)
+

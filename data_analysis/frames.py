@@ -44,18 +44,32 @@ class Frames:
 				self.timestamp[j : i] = np.linspace(self.timestamp[j], self.timestamp[i], i - j, endpoint = False)
 				j = i
 
+	def kalman_filter(self, points):
+		x, y, z = Point.points_2_xyz(points)
+		
+		kf = KalmanFilter(transition_matrices=np.array([[1, 1], [0, 1]]), transition_covariance=0.01 * np.eye(2))
+		x_filtered = kf.filter(x)[0]
+		y_filtered = kf.filter(y)[0]
+		z_filtered = kf.filter(z)[0]
+		x = x_filtered[:, 0]
+		y = y_filtered[:, 0]
+		z = z_filtered[:, 0]
+		# dx = x_filtered[:, 1]
+		# dy = y_filtered[:, 1]
+		# dz = z_filtered[:, 1]
+
+		return Point.xyz_2_points(x, y, z)
+
 	def fix_acc(self):
 		x, y, z = Point.points_2_xyz(self.acc)
 		x -= np.median(x)
 		y -= np.median(y)
 		z -= np.median(z)
 		self.acc = Point.xyz_2_points(x, y, z)
+		self.acc = self.kalman_filter(self.acc)
 
 	def fix_gyr(self):
-		x, y, z = Point.points_2_xyz(self.gyr)
-		kf = KalmanFilter(initial_state_mean=0, n_dim_obs=2)
-
-		self.gyr = Point.xyz_2_points(x, y, z)
+		self.gyr = self.kalman_filter(self.gyr)
 
 	def caln_key_frame(self):
 		A = [(self.gyr[i].x ** 2 + self.gyr[i].y ** 2 + self.gyr[i].z ** 2) ** 0.5 for i in range(len(self.gyr))]
