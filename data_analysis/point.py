@@ -15,3 +15,19 @@ class Point:
 	
 	def __str__(self):
 		return '(' + str(self.x) + ', ' + str(self.y) + ', ' + str(self.z) + ')'
+
+	@staticmethod
+	def points_2_xyz(array):
+		n = len(array)
+		x = [array[i].x for i in range(n)]
+		y = [array[i].y for i in range(n)]
+		z = [array[i].z for i in range(n)]
+		return x, y, z
+
+	@staticmethod
+	def xyz_2_points(x, y, z):
+		n = len(x)
+		assert n == len(y)
+		assert n == len(z)
+		points = [Point(x[i], y[i], z[i]) for i in range(n)]
+		return points
