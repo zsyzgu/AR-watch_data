@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from point import Point
 from frames import Frames
+import scipy.signal as signal
+from sklearn.decomposition import PCA
 
 def get_file_list():
 	root_dir = '.'
@@ -25,8 +27,18 @@ def draw_points(timestamp, points):
 	x, y, z = Point.points_2_xyz(points)
 	plt.plot(timestamp, x, timestamp, y, timestamp, z)
 
+def draw_peaks(points):
+	x, y, z = Point.points_2_xyz(points)
+	peaks, _ = signal.find_peaks(abs(x), height=1000, distance=5, threshold=5)
+	plt.plot(peaks, x[peaks], '.')
+	peaks, _ = signal.find_peaks(abs(y), height=1000, distance=5, threshold=5)
+	plt.plot(peaks, y[peaks], '.')
+	peaks, _ = signal.find_peaks(abs(z), height=1000, distance=5, threshold=5)
+	plt.plot(peaks, z[peaks], '.')
+
 def draw_frames(frames):
-	timestamp = frames.timestamp
+	n = frames.len()
+	# timestamp = frames.timestamp
 	acc = frames.acc
 	gyr = frames.gyr
 	key_gyr = frames.caln_key_frame()
@@ -35,14 +47,15 @@ def draw_frames(frames):
 
 	plt.subplot(2, 1, 1)
 	plt.title('acc')
-	draw_points(timestamp, acc)
+	draw_points(range(n), acc)
+	draw_peaks(acc)
 
 	plt.subplot(2, 1, 2)
 	plt.title('gyr')
-	draw_points(timestamp, gyr)
-	plt.axvline(timestamp[key_gyr], color = 'red')
-	plt.axvline(timestamp[key_gyr - 100], color = 'green')
-	plt.axvline(timestamp[key_gyr + 100], color = 'green')
+	draw_points(range(n), gyr)
+	plt.axvline(key_gyr - 100, color = 'green')
+	plt.axvline(key_gyr + 100, color = 'green')
+	draw_peaks(gyr)
 
 	plt.show()
 

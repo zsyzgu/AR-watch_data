@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from pykalman import KalmanFilter
 from point import Point
+import scipy.signal as signal
+import math
 
 class Frames:
 	timestamp = []
@@ -71,11 +73,16 @@ class Frames:
 	def fix_gyr(self):
 		self.gyr = self.kalman_filter(self.gyr)
 
-	def caln_key_frame(self):
-		A = [(self.gyr[i].x ** 2 + self.gyr[i].y ** 2 + self.gyr[i].z ** 2) ** 0.5 for i in range(len(self.gyr))]
-		return A.index(max(A))
-
 	def preprocess(self):
 		self.fix_timestamp()
 		self.fix_acc()
 		self.fix_gyr()
+
+	def caln_amplitude(self, points):
+		n = len(points)
+		A = [(points[i].x ** 2 + points[i].y ** 2 + points[i].z ** 2) ** 0.5 for i in range(n)]
+		return A
+
+	def caln_key_frame(self):
+		A = self.caln_amplitude(self.gyr)
+		return A.index(max(A))

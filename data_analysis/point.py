@@ -1,3 +1,5 @@
+import numpy as np
+
 class Point:
 	x = 0.0
 	y = 0.0
@@ -19,9 +21,9 @@ class Point:
 	@staticmethod
 	def points_2_xyz(array):
 		n = len(array)
-		x = [array[i].x for i in range(n)]
-		y = [array[i].y for i in range(n)]
-		z = [array[i].z for i in range(n)]
+		x = np.array([array[i].x for i in range(n)])
+		y = np.array([array[i].y for i in range(n)])
+		z = np.array([array[i].z for i in range(n)])
 		return x, y, z
 
 	@staticmethod
